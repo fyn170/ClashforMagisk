@@ -1,9 +1,10 @@
+tproxy-port: 9898
 mode: rule
 allow-lan: true
 unified-delay: true
 bind-address: '*'
 log-level: silent
-ipv6: true
+ipv6: false
 geodata-mode: true
 external-controller: 0.0.0.0:9090
 external-ui: dashboard/dist
@@ -11,62 +12,63 @@ tcp-concurrent: false
 interface-name: ""
 enable-process: false
 geodata-loader: memconservative
+inbound-tfo: false
 secret: ""
 profile:
   store-selected: true
   store-fake-ip: false
-geox-url: {mmdb: "https://cdn.jsdelivr.net/gh/Dreamacro/maxmind-geoip@release/Country.mmdb", geoip: "https://github.com/v2fly/geoip/raw/release/geoip-only-cn-private.dat", geosite: "https://github.com/taamarin/GeoSite.dat/raw/release/dlc.dat"}
+geox-url: {mmdb: "https://cdn.jsdelivr.net/gh/Dreamacro/maxmind-geoip@release/Country.mmdb", geoip: "https://github.com/Loyalsoldier/v2ray-rules-dat/raw/release/geoip.dat", geosite: "https://github.com/Loyalsoldier/v2ray-rules-dat/raw/release/geosite.dat"}
+# experimental:
+  # sniff-tls-sni: true #featured CLASH.PREMIUM
+  # fingerprint: xxxx # 同 experimental.fingerprints 使用 sha256 指纹，配置协议独立的指纹，将忽略 experimental.fingerprints
 dns:
   enable: true
   device: Meta
-  ipv6: true
+  ipv6: false
+  prefer-h3: false #start DOH to use http/3 first
   default-nameserver:
     - 1.1.1.1
     - 9.9.9.9
   listen: 0.0.0.0:1053
   use-hosts: true
   enhanced-mode: fake-ip
-  fake-ip-filter: ['networktest.twilio.com', '+.twilio.com']
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter: ['networktest.twilio.com', '+.twilio.com', 'connect.rom.miui.com', '+.msftnsci.com', '+.msftconnecttest.com', '+.gstatic.com', '+.stun.*.*', '+.stun.*.*.*', '+.stun.*.*.*.*', '+.time.*', '+.time.*.*', '+.time.*.*.*', '+.ntp.*', '+.ntp.*.*', '+.ntp.*.*.*']
   nameserver:
-    - https://149.112.112.112/dns-query
-    - quic://dns.adguard.com
-    - tls://dns.adguard.com
-  proxy-server-nameserver:
-    - 104.18.38.174
-  fallback:
-    - 1.1.1.1
-    - 8.8.8.8
-  fallback-filter:
-    geoip: false
-    geoip-code: ID
-    geosite: []
-    domain:
-      - '+.google.com'
-    ipcidr: []
-auto-redir:
-  enable: false
-  auto-route: false
+    - 172.67.199.34
+    - tls://dns.quad9.net
+    - https://1.1.1.1/dns-query
+#  proxy-server-nameserver:
+#    - 172.67.199.34
+#  fallback:
+#    - https://dns.google/dns-query
+#    - https://1.1.1.1/dns-query
+#  fallback-filter:
+#    geoip: false
+#    geoip-code: "ID"
+#    geosite:
+#      - GFW
+#    ipcidr:
+#      - 0.0.0.0/32
+#    domain: ['+.google.com', '+.facebook.com', '+.youtube.com', '+.githubusercontent.com', '+.googlevideo.com', '+.msftconnecttest.com', '+.msftncsi.com', 'msftconnecttest.com', 'msftncsi.com']
 tun:
   enable: false
   stack: system
   dns-hijack:
     - any:53
-  auto-route: true
-  auto-detect-interface: true
+  auto-route: false
+  auto-detect-interface: false
+#ebpf:
+#  redirect-to-tun: [rmnet_data2] # UDP+TCP
+#  auto-redir: [rmnet_data2] # Only TCP
 sniffer:
   enable: false
-  sniffing:
-    - tls
-    - http
-  force-domain:
-    - '+'
-  skip-domain:
-    - '+.google.com'
-  port-whitelist:
-    - 443
-    - 80
-iptables: {enable: false, inbound-interface: "", bypass: []}
-hosts:
-  '+.clash.meta': 127.0.0.1
-  'cacerts.digicert.com': 141.193.213.20
-tproxy-port: 9898
+  sniffing: ['tls', 'http']
+  force-domain: ['+']
+  skip-domain: ['+.google.com']
+  port-whitelist: ['443', '80']
+#hosts:
+#  'cacerts.digicert.com': 172.67.199.34
+#auto-redir: # featured CLASH.PREMIUM
+#   enable: true
+#   auto-route: false

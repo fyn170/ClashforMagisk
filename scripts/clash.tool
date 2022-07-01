@@ -32,6 +32,7 @@ monitor_local_ipv4() {
         if [ "${card2}" = 1 ] ; then
             mobilestatus=2
         fi
+
         if [ ! "${mobilestatus}" = "$(cat ${Clash_run_path}/lastmobile)" ]; then
             change=true
             echo "${mobilestatus}" >${Clash_run_path}/lastmobile
@@ -61,9 +62,9 @@ monitor_local_ipv4() {
         for subnet6 in ${local_ipv6[*]}; do
             ${ip6tables_wait} -t mangle -I FILTER_LOCAL_IP -d ${subnet6} -j ACCEPT
         done
-       # echo "info msg= aturan iptables untuk meneruskan ip lokal telah diperbarui." >> ${CFM_logs_file}
+       # echo $date_log"info: aturan iptables untuk meneruskan ip lokal telah diperbarui." >> ${CFM_logs_file}
     else
-       # echo "warning msg= tidak ada pembaruan ip local" >> ${CFM_logs_file}
+       # echo $date_log"warn: tidak ada pembaruan ip local" >> ${CFM_logs_file}
         exit 0
     fi
 
@@ -82,14 +83,14 @@ find_packages_uid() {
         for package in `cat ${filter_packages_file} | sort -u` ; do
             ${busybox_path} awk '$1~/'^"${package}"$'/{print $2}' ${system_packages_file} >> ${appuid_file}
             if [ "${mode}" = "blacklist" ] ; then
-                echo "info msg= ${package} di filter " >> ${CFM_logs_file}
+                echo $date_log"info: ${package} di filter " >> ${CFM_logs_file}
             elif [ "${mode}" = "whitelist" ] ; then
-                echo "info msg= ${package} diproksi." >> ${CFM_logs_file}
+                echo $date_log"info: ${package} diproksi." >> ${CFM_logs_file}
             fi
         done
     else
-        echo "warning msg= filter/bypass dimatikan" >> ${CFM_logs_file}
-        echo "warning msg= set (enhanced-mode: redir-host) to activate the filter" >> ${CFM_logs_file}
+        echo $date_log"warn: filter/bypass dimatikan" >> ${CFM_logs_file}
+        echo $date_log"warn: set (enhanced-mode: redir-host) to activate the filter" >> ${CFM_logs_file}
     fi
 }
 
@@ -101,16 +102,16 @@ cgroup_limit() {
         Cgroup_memory_path=$(mount | grep cgroup | ${busybox_path} awk '/memory/{print $3}' | head -1)
     fi
 
-    mkdir -p "${Cgroup_memory_path}/clash" && echo "info msg= Cgroup memory limit: ${Cgroup_memory_limit}" >> ${CFM_logs_file} || echo "warning msg= failed, kernel tidak mendukung memory Cgroup" >> ${CFM_logs_file}
+    mkdir -p "${Cgroup_memory_path}/clash" && echo $date_log"info: Cgroup memory limit: ${Cgroup_memory_limit}" >> ${CFM_logs_file} || echo $date_log"warn: failed, kernel tidak mendukung memory Cgroup" >> ${CFM_logs_file}
 
-    echo $(cat ${Clash_pid_file}) > "${Cgroup_memory_path}/clash/cgroup.procs" && echo "info msg= create ${Cgroup_memory_path}/clash/cgroup.procs" >> ${CFM_logs_file} || echo "warning msg= can't create  ${Cgroup_memory_path}/clash/cgroup.procs" >> ${CFM_logs_file}
+    echo $(cat ${Clash_pid_file}) > "${Cgroup_memory_path}/clash/cgroup.procs" && echo $date_log"info: create ${Cgroup_memory_path}/clash/cgroup.procs" >> ${CFM_logs_file} || echo $date_log"warn: can't create  ${Cgroup_memory_path}/clash/cgroup.procs" >> ${CFM_logs_file}
 
-    echo "${Cgroup_memory_limit}" > "${Cgroup_memory_path}/clash/memory.limit_in_bytes" && echo "info msg= create ${Cgroup_memory_path}/clash/memory.limit_in_bytes" >> ${CFM_logs_file} || echo "warning msg= can't create  ${Cgroup_memory_path}/clash/memory.limit_in_bytes" >> ${CFM_logs_file}
+    echo "${Cgroup_memory_limit}" > "${Cgroup_memory_path}/clash/memory.limit_in_bytes" && echo $date_log"info: create ${Cgroup_memory_path}/clash/memory.limit_in_bytes" >> ${CFM_logs_file} || echo $date_log"warn: can't create  ${Cgroup_memory_path}/clash/memory.limit_in_bytes" >> ${CFM_logs_file}
 
     if [ -d "${Cgroup_memory_path}/clash" ]; then
-        echo "info msg= Clash cgroup activated | status: [${Cgroup_memory}]" >> ${CFM_logs_file}
+        echo $date_log"info: Clash cgroup activated | status: [${Cgroup_memory}]" >> ${CFM_logs_file}
     elif [ ! -d "${Cgroup_memory_path}/clash" ]; then
-        echo "warning msg= Cgroup failed" >> ${CFM_logs_file}
+        echo $date_log"warn: Cgroup failed" >> ${CFM_logs_file}
     fi
 }
 
@@ -122,9 +123,9 @@ restart_clash() {
 
     ${scripts_dir}/clash.service -s && ${scripts_dir}/clash.iptables -s
     if [ "$?" == "0" ]; then
-        echo "warning msg= Clash berhasil dimulai ulang." >>${CFM_logs_file}
+        echo $date_log"warn: Clash berhasil dimulai ulang." >>${CFM_logs_file}
     else
-        echo "error msg= Clash Gagal dimulai ulang." >>${CFM_logs_file}
+        echo $date_log"err: Clash Gagal dimulai ulang." >>${CFM_logs_file}
     fi
 }
 
@@ -135,50 +136,53 @@ update_file() {
 
         if [ -f ${file} ]; then
             mv -f ${file} ${file_bak}
-            echo "warning msg= backup file ${file_bak}" >> ${CFM_logs_file}
+            echo $date_log"warn: backup file ${file_bak}" >> ${CFM_logs_file}
         fi
-        echo "curl -L -A 'clash' ${update_url} -o ${file} "
-        curl -L -A 'clash' ${update_url} -o ${file} 2>&1
+        echo "curl -k --insecure -L -A 'clash' ${update_url} -o ${file}"
+        curl -k --insecre -L -A 'clash' ${update_url} -o ${file} 2>&1
 
         sleep 0.5
 
         if [ -f "${file}" ] ; then
-            echo "info msg= `date` Update ${file} done." >> ${CFM_logs_file}
+            echo $date_log"info: `date` Update ${file} done." >> ${CFM_logs_file}
         else
-            echo "error msg= `date` Update ${file} failed." >> ${CFM_logs_file}
+            echo $date_log"err: `date` Update ${file} failed." >> ${CFM_logs_file}
             if [ -f "${file_bak}" ]; then
                 mv ${file_bak} ${file}
-                echo "warning msg= `date` restore ${file}." >> ${CFM_logs_file}
+                echo $date_log"warn: `date` restore ${file}." >> ${CFM_logs_file}
             fi
         fi
 }
 
 auto_update() {
     if [ "${auto_updateGeoX}" == "true" ] ; then
-       update_file ${Clash_GeoIP_file} ${GeoIP_dat_url} >> ${CFM_logs_file}
+       update_file ${Clash_GeoIP_file} ${GeoIP_dat_url} >> /data/clash/run/UpGeoSub.log
        if [ "$?" = "0" ]; then
           flag=true
        fi
     fi
 
     if [ "${auto_updateGeoX}" == "true" ] ; then
-       update_file ${Clash_GeoSite_file} ${GeoSite_url} >> ${CFM_logs_file}
+       update_file ${Clash_GeoSite_file} ${GeoSite_url} >> /data/clash/run/UpGeoSub.log
        if [ "$?" = "0" ]; then
           flag=true
        fi
     fi
 
     if [ ${auto_updateSubcript} == "true" ]; then
-       update_file ${Clash_config_file} ${Subcript_url} >> ${CFM_logs_file}
+       update_file ${Clash_config_file} ${Subcript_url} >> /data/clash/run/UpGeoSub.log
        if [ "$?" = "0" ]; then
           flag=true
        fi
     fi
 
+
     if [ -f "${Clash_pid_file}" ] && [ ${flag} == true ]; then
-        restart_clash
+        if [ "${restart_clash}" == "true" ] ; then
+            restart_clash
+        fi
     else
-        echo "warning msg= Clash tidak dimulai ulang" >> ${CFM_logs_file}
+        echo $date_log"warn: Clash tidak dimulai ulang" >> ${CFM_logs_file}
     fi
 }
 
@@ -186,7 +190,7 @@ config_online() {
     clash_pid=`cat ${Clash_pid_file}`
     match_count=0
 
-    echo "warning msg= Download Config online" > ${CFM_logs_file}
+    echo $date_log"warn: Download Config online" > ${CFM_logs_file}
     update_file ${Clash_config_file} ${Subcript_url} >> ${CFM_logs_file}
 
     sleep 0.5
@@ -196,10 +200,10 @@ config_online() {
     fi
 
     if [ ${match_count} -ge 1 ] ; then
-        echo "info msg= download succes." >> ${CFM_logs_file}
+        echo $date_log"info: download succes." >> ${CFM_logs_file}
         exit 0
     else
-        echo "error msg= download failed, pastikan Url Tidak kosong" >> ${CFM_logs_file}
+        echo $date_log"err: download failed, pastikan Url Tidak kosong" >> ${CFM_logs_file}
         exit 1
     fi
 }
@@ -228,11 +232,11 @@ port_detection() {
     if (ss -h > /dev/null 2>&1) ; then
         clash_port=$(ss -antup | grep "${Clash_bin_name}" | ${busybox_path} awk '$7~/'pid="${clash_pid}"*'/{print $5}' | ${busybox_path} awk -F ':' '{print $2}' | sort -u)
     else
-        echo "info msg= skip port detected" >> ${CFM_logs_file}
+        echo $date_log"info: skip port detected" >> ${CFM_logs_file}
         exit 0
     fi
 
-    echo -n "info msg= port detected: " >> ${CFM_logs_file}
+    echo -n $date_log"info: port detected: " >> ${CFM_logs_file}
     for sub_port in ${clash_port[*]} ; do
         sleep 1
         echo -n "${sub_port} " >> ${CFM_logs_file}
@@ -243,7 +247,7 @@ port_detection() {
 file_start() {
     local PID=`cat /data/clash/run/filemanager.pid 2> /dev/null`
     if (cat /proc/${PID}/cmdline | grep -q php) ; then
-        echo "info msg= file manager service is running." > /data/clash/run/filemanager.log
+        echo $date_log"info: file manager service is running." > /data/clash/run/filemanager.log
         exit 1
     fi
 
@@ -252,9 +256,9 @@ file_start() {
         chmod 0755 /data/data/com.termux/files/usr/bin/php
         nohup ${busybox_path} setuidgid 0:3005 /data/data/com.termux/files/usr/bin/php -S 0.0.0.0:9999 -t /data/clash > /dev/null 2>&1 &
         echo -n $! > /data/clash/run/filemanager.pid
-        echo "info msg= file manager service is running (PID: `cat /data/clash/run/filemanager.pid`)" > ${Clash_run_path}/filemanager.log
+        echo $date_log"info: file manager service is running (PID: `cat /data/clash/run/filemanager.pid`)" > ${Clash_run_path}/filemanager.log
     else
-       echo "error msg= PHP binary not detected." >> /data/clash/run/filemanager.log
+       echo $date_log"err: PHP binary not detected." >> /data/clash/run/filemanager.log
        exit 1
     fi
 }
@@ -262,7 +266,7 @@ file_start() {
 file_stop() {
     kill -9 `cat /data/clash/run/filemanager.pid`
     rm -rf /data/clash/run/filemanager.pid
-    echo "info msg= file manager service is  stopped." >> /data/clash/run/filemanager.log
+    echo $date_log"info: file manager service is  stopped." >> /data/clash/run/filemanager.log
 }
 
 clash_cron() {
@@ -278,26 +282,47 @@ i=0
 
 update_core() {
     if [ "${use_premium}" == "false" ]; then
-        #latest_meta_version=`curl -ks https://api.github.com/repos/taamarin/Clash.Meta/releases | grep -m 1 "tag_name" | grep -o "Prerelease-Alpha"`
-        latest_meta_version="Prerelease-Alpha"
-        version_meta="Clash.Meta-android-arm64-alpha.gz"
-        file_core="Clash.Meta"
-        url_meta="${official_link_meta}/${latest_meta_version}/${version_meta}"
-        update_file /data/clash/"${file_core}".gz ${url_meta} > ${CFM_logs_file}
+        if [ "${meta_alpha}" == "false" ]; then
+            tag_meta=$(curl -fsSL ${url_meta} | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+" | head -1)
+            filename="${file_core}-${platform}-${arch}-${tag_meta}"
+            update_file /data/clash/${file_core}.gz ${url_meta}/download/${tag_meta}/${filename}.gz > ${CFM_logs_file}
+        else
+            tag_meta=$(curl -fsSL ${url_meta} | grep -oE "${tag_name}" | head -1)
+            filename="${file_core}-${platform}-${arch}-${tag_meta}"
+            update_file /data/clash/${file_core}.gz ${url_meta}/download/Prerelease-${tag}/${filename}.gz > ${CFM_logs_file}
+        fi
     else
-        file_core="Clash.Premium"
-        update_file /data/clash/"${file_core}".gz ${official_link_premium} > ${CFM_logs_file}
+        if [ "${premium_dev}" == "false" ]; then
+            filename=$(curl -fsSL ${url_premium}/tag/premium | grep -oE "clash-${platform}-${arch}-[0-9]+.[0-9]+.[0-9]+" | head -1)
+            update_file /data/clash/"${file_core}".gz ${url_premium}/download/premium/${filename}.gz > ${CFM_logs_file}
+        else
+            update_file /data/clash/"${file_core}".gz https://release.dreamacro.workers.dev/latest/clash-${platform}-${arch}-latest.gz > ${CFM_logs_file}
+        fi
     fi
 
     if (gunzip --help > /dev/null 2>&1) ; then
         if [ -f /data/clash/"${file_core}".gz ]; then
-            gunzip /data/clash/"${file_core}".gz
+            if (gunzip /data/clash/"${file_core}".gz) ; then
+                echo ""
+            else
+                echo $date_log"err: Gunzip ${file_core}.gz failed"  >> ${CFM_logs_file}
+                if [ -f /data/clash/"${file_core}".gz.bak ]; then
+                    rm -rf /data/clash/"${file_core}".gz.bak
+                else
+                    rm -rf /data/clash/"${file_core}".gz
+                fi
+                if [ -f /data/clash/run/clash.pid ]; then
+                    echo $date_log"info: Clash service is running (PID: `cat ${Clash_pid_file}`)" >> ${CFM_logs_file}
+                    echo $date_log"info: Connect" >> ${CFM_logs_file}
+                fi
+                exit 1
+            fi
         else
-            echo "gunzip failed"
+            echo $date_log"err: Gunzip ${file_core}.gz failed"  >> ${CFM_logs_file}
             exit 1
         fi
     else
-        echo "error msg= gunzip not found"
+        echo $date_log"err: Gunzip not found"  >> ${CFM_logs_file}
         exit 1
     fi
 
@@ -309,17 +334,19 @@ update_core() {
     if [ -f "${Clash_pid_file}" ] && [ ${flag} == true ]; then
         restart_clash
     else
-        echo "warning msg= Clash tidak dimulai ulang" >> ${CFM_logs_file}
+        echo $date_log"warn: Clash tidak dimulai ulang" >> ${CFM_logs_file}
     fi
 }
 
 update_dashboard() {
+    url_dashboard="https://github.com/haishanh/yacd/archive/refs/heads/gh-pages.zip"
+    #url_dashboard="https://github.com/taamarin/yacd-meta/archive/refs/heads/gh-pages.zip"
     file_dasboard="/data/clash/dashboard.zip"
     rm -rf /data/clash/dashboard/dist
 
     curl -L -A 'clash' ${url_dashboard} -o ${file_dasboard} 2>&1
-    unzip -o  "${file_dasboard}" "yacd-meta-gh-pages/*" -d /data/clash/dashboard >&2
-    mv -f /data/clash/dashboard/yacd-meta-gh-pages /data/clash/dashboard/dist 
+    unzip -o  "${file_dasboard}" "yacd-gh-pages/*" -d /data/clash/dashboard >&2
+    mv -f /data/clash/dashboard/yacd-gh-pages /data/clash/dashboard/dist 
     rm -rf ${file_dasboard}
 }
 
@@ -340,12 +367,13 @@ while getopts ":afklmupoxced" signal ; do
             ;;
         m)
             if [ "${mode}" = "blacklist" ] && [ -f "${Clash_pid_file}" ] ; then
-                monitor_local_ipv4
+                monitor_local_ipv4 &>> /data/clash/run/service.log
             else
                 exit 0
             fi
             ;;
         u)
+            echo -n > /data/clash/run/UpGeoSub.log
             if [ "${auto_updateSubcript}" == "true" ] && [ "${auto_updateGeoX}" == "true" ]; then 
                 auto_update
             elif [ "${auto_updateSubcript}" == "true" ] && "${auto_updateGeoX}" == "false" ]; then 
@@ -372,6 +400,7 @@ while getopts ":afklmupoxced" signal ; do
             file_stop
             ;;
         e)
+            echo "proses download"
             update_core
             ;;
         d)
