@@ -139,7 +139,7 @@ update_file() {
             echo $date_log"warn: backup file ${file_bak}" >> ${CFM_logs_file}
         fi
         echo "curl -k --insecure -L -A 'clash' ${update_url} -o ${file}"
-        curl -k --insecre -L -A 'clash' ${update_url} -o ${file} 2>&1
+        curl -k --insecure -L -A 'clash' ${update_url} -o ${file} 2>&1
 
         sleep 0.5
 
@@ -299,6 +299,8 @@ update_core() {
             update_file /data/clash/"${file_core}".gz https://release.dreamacro.workers.dev/latest/clash-${platform}-${arch}-latest.gz > ${CFM_logs_file}
         fi
     fi
+
+    rm -rf /data/clash/run/arch.log
 
     if (gunzip --help > /dev/null 2>&1) ; then
         if [ -f /data/clash/"${file_core}".gz ]; then
