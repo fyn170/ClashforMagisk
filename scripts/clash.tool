@@ -89,8 +89,8 @@ find_packages_uid() {
             fi
         done
     else
-        echo $date_log"warn: filter/bypass dimatikan" >> ${CFM_logs_file}
-        echo $date_log"warn: set (enhanced-mode: redir-host) to activate the filter" >> ${CFM_logs_file}
+        echo $date_log"info: filter/bypass turned off" >> ${CFM_logs_file}
+        echo $date_log"info: set (enhanced-mode: redir-host) to activate the filter" >> ${CFM_logs_file}
     fi
 }
 
@@ -230,7 +230,7 @@ port_detection() {
     match_count=0
     
     if (ss -h > /dev/null 2>&1) ; then
-        clash_port=$(ss -antup | grep "${Clash_bin_name}" | ${busybox_path} awk '$7~/'pid="${clash_pid}"*'/{print $5}' | ${busybox_path} awk -F ':' '{print $2}' | sort -u)
+        clash_port=$(ss -antup | grep "clash" | ${busybox_path} awk '$7~/'pid="${clash_pid}"*'/{print $5}' | ${busybox_path} awk -F ':' '{print $2}' | sort -u)
     else
         echo $date_log"info: skip port detected" >> ${CFM_logs_file}
         exit 0
@@ -289,7 +289,7 @@ update_core() {
         else
             tag_meta=$(curl -fsSL ${url_meta} | grep -oE "${tag_name}" | head -1)
             filename="${file_core}-${platform}-${arch}-${tag_meta}"
-            update_file /data/clash/${file_core}.gz ${url_meta}/download/Prerelease-${tag}/${filename}.gz > ${CFM_logs_file}
+            update_file /data/clash/${file_core}.gz ${url_meta}/download/${tag}/${filename}.gz > ${CFM_logs_file}
         fi
     else
         if [ "${premium_dev}" == "false" ]; then

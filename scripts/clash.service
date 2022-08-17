@@ -37,7 +37,7 @@ start_clash() {
         ${Clash_bin_path} -v >> ${CFM_logs_file}
     fi
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> ${CFM_logs_file}
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> ${CFM_logs_file}
 
     if [ "${ipv6}" == "false" ] ; then
         echo 1 > /proc/sys/net/ipv6/conf/lo/disable_ipv6
@@ -98,11 +98,11 @@ start_clash() {
         [ ! -L /dev/net/tun ] && ln -sf /dev/tun /dev/net/tun
         echo $date_log"info: using [tun] mode, stack: [${Clash_stack_mode}] " >> ${CFM_logs_file}
         echo $date_log"info: create /dev/net/tun." >> ${CFM_logs_file}
-#        sed -i 's/listen:.*/listen: ""/' /data/clash/template
+        sed -i 's/listen:.*/listen: ""/' /data/clash/template
         sed -i 's/tproxy-port:.*/tproxy-port: 0/' /data/clash/template
     else
         echo $date_log"info: using [tproxy] mode." >> ${CFM_logs_file}
-#        sed -i 's/listen:.*/listen: 0.0.0.0:1053/' /data/clash/template
+        sed -i 's/listen:.*/listen: 0.0.0.0:1053/' /data/clash/template
         sed -i 's/tproxy-port:.*/tproxy-port: 9898/' /data/clash/template
     fi
 
@@ -197,22 +197,22 @@ start_clash() {
                     echo $date_log"info: Cgroup | status: ${Cgroup_memory}" >> ${CFM_logs_file}
                 fi
                 sleep 0.5
-                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> ${CFM_logs_file}
-                sed -i s/.*level=// ${Clash_run_path}/config.logs
-                sed -i 's/configuration file*/info msg=/' /data/clash/run/config.logs
+#                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> ${CFM_logs_file}
+                sed -i s/.*msg=// ${Clash_run_path}/config.logs
+                sed -i 's/configuration file*//' /data/clash/run/config.logs
                 while read p; do
-                    echo ${date_log} "$p"  >> ${CFM_logs_file}
+                    echo ${date_log}"info:" "$p" >> ${CFM_logs_file}
                 done <${Clash_run_path}/config.logs
-                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> ${CFM_logs_file}
+#                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> ${CFM_logs_file}
             else
-                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> ${CFM_logs_file}
-                sed -i s/.*level=// ${Clash_run_path}/config.logs
-                sed -i 's/fatal msg=*/error msg=/' /data/clash/run/config.logs
-                sed -i 's/configuration file*/error msg=/' /data/clash/run/config.logs
+#                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> ${CFM_logs_file}
+                sed -i s/.*msg=// ${Clash_run_path}/config.logs
+#                sed -i 's/fatal msg=*//' /data/clash/run/config.logs
+                sed -i 's/configuration file*//' /data/clash/run/config.logs
                 while read p; do
-                    echo ${date_log} "$p"  >> ${CFM_logs_file}
+                    echo ${date_log}"err:" "$p" >> ${CFM_logs_file}
                 done <${Clash_run_path}/config.logs
-                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> ${CFM_logs_file}
+#                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> ${CFM_logs_file}
                 if [ "${use_config}" == "false" ]; then
                     mv ${temporary_config_file} ${Clash_data_dir}/config.yaml
                 else

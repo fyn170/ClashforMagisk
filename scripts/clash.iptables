@@ -69,7 +69,7 @@ create_mangle_prerouting_filter() {
 }
 
 create_mangle_output_filter() {
-    echo $date_log"warn: filter/bypass (${mode}) turn on" >> ${CFM_logs_file}
+    echo $date_log"info: filter/bypass (${mode}) turn on" >> ${CFM_logs_file}
     ${scripts_dir}/clash.tool -f
 
     ${iptables_wait} -t mangle -N FILTER_OUT_CLASH
@@ -327,7 +327,7 @@ start_tun(){
         ${iptables_wait} -t mangle -A CLASH_OUT -d ${subnet} -j RETURN
     done
 
-    echo $date_log"warn: filter/bypass (${mode}) turn on" >> ${CFM_logs_file}
+    echo $date_log"info: filter/bypass (${mode}) turn on" >> ${CFM_logs_file}
     ${scripts_dir}/clash.tool -f
     apps=`cat ${appuid_file} | sort -u`
     if [ "${mode}" = "blacklist" ] ; then
@@ -452,7 +452,7 @@ while getopts ":sk" signal ; do
         s)
            if [ "${Clash_tun_status}" == "false" ]; then
                flush_rule_rules && flush_rules &>> /data/clash/run/service.log
-               echo $date_log"warn: scripts refresh Iptables tproxy" >> ${CFM_logs_file}
+               echo $date_log"info: scripts refresh Iptables tproxy" >> ${CFM_logs_file}
                sleep 0.5
                create_rule_rules && apply_rules &>> /data/clash/run/service.log
                echo $date_log"info: scripts Iptables tproxy diterapkan" >> ${CFM_logs_file}
@@ -461,13 +461,13 @@ while getopts ":sk" signal ; do
                rm -rf /data/clash/run/lastmobile
                if [ "${Clash_auto_detect_interface}" == "true" ]; then
                     stop_tun_portabel &>> /data/clash/run/service.log
-                    echo $date_log"warn: refresh tun diterapkan" >> ${CFM_logs_file}
+                    echo $date_log"info: refresh tun diterapkan" >> ${CFM_logs_file}
                     sleep 0.5
                     start_tun_portabel &>> /data/clash/run/service.log
                     echo $date_log"info: tun diterapkan" >> ${CFM_logs_file}
                else
                   stop_tun &>> /data/clash/run/service.log
-                  echo $date_log"warn: refresh scripts Iptables tun" >> ${CFM_logs_file}
+                  echo $date_log"info: refresh scripts Iptables tun" >> ${CFM_logs_file}
                   sleep 0.5
                   start_tun &>> /data/clash/run/service.log
                   echo $date_log"info: scripts Iptables tun diterapkan" >> ${CFM_logs_file}
